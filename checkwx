@@ -1,0 +1,23 @@
+#!/bin/bash
+# Checks to see if we're missing too many transmissions from the weather station
+# Best case is 6 per hour though that might be a little lower depending on timing
+
+#TODO: Need a way to stop the alerts - Maybe create a file (/usr/local/share/wxmon?) and presence of that
+#      stops checks. Or better have it contain a count and stop notifying/checking after 'n' runs
+#      Maybe keep checking but don't run ntfy and allow the mute file to reset if success
+#TODO: Handle database failures
+
+INFLUX_PASSWORD="netatmo"
+modules=( "Outdoor Module" "Wind Gauge" "Rain Gauge")
+REQUIRED=3     #Minimum acceptable polls per hour, max = 6
+HOURS=1
+EXPECTED=$(($REQUIRED*$HOURS))
+#echo EXPECTED = $EXPECTED
+
+for device in "${modules[@]}"
+do
+count=`influx -host aws.kozinn.com -database netatmo -username weather -format json -execute "select count(value) from rf_status where time>=now() -${HOURS}h and module=~/$device/" | jq '.results[0].series[0].values[0][1]'`
+   #(($count < $EXPECTED)) && echo -n "Failed" || echo -n "Succeeded"
+   #echo " for $device, got $count"
+   (($count < $EXPECTED)) && ntfy -t "WX station alert" send "$device has transmitted only $count data points for the last ${HOURS}h. Expected minimum is $EXPECTED" || `true`
+done
