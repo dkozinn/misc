@@ -6,18 +6,15 @@
 #      stops checks. Or better have it contain a count and stop notifying/checking after 'n' runs
 #      Maybe keep checking but don't run ntfy and allow the mute file to reset if success
 
-
-INFLUX_PASSWORD="netatmo"
+. ~/.checkwx.conf
 
 modules=( "Outdoor Module" "Wind Gauge" "Rain Gauge")
-REQUIRED=3     #Minimum acceptable polls per hour, max = 6
-HOURS=1
 EXPECTED=$(($REQUIRED*$HOURS))
 #echo EXPECTED = $EXPECTED
 
 for device in "${modules[@]}"
 do
-   results=`influx -host awsx.kozinn.com -database netatmo -username weather -format json -execute "select count(value) from rf_status where time>=now() -${HOURS}h and module=~/$device/" 2>/dev/null`
+   results=`influx -host ${DBHOST} -database ${DBNAME} -username ${DBUSER} -format json -execute "select count(value) from rf_status where time>=now() -${HOURS}h and module=~/$device/" 2>/dev/null`
    (( $? )) &&  echo Could not connect to influx, $0 aborting && exit 1
    count=$(echo $results | jq '.results[0].series[0].values[0][1]')
    #(($count < $EXPECTED)) && echo -n "Failed" || echo -n "Succeeded"
