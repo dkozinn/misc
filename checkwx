@@ -20,5 +20,5 @@ do
    #(($count < $EXPECTED)) && echo -n "Failed" || echo -n "Succeeded"
    #echo " for $device, got $count"
    # The || $(true) on the next line is so we always exit with zero in $?
-   (($count < $EXPECTED)) && ntfy -t "WX station alert" send "$device has transmitted only $count data points for the last ${HOURS}h. Expected minimum is $EXPECTED" || $(true)
+   (($count < $EXPECTED)) && /usr/local/bin/ntfy -t "WX station alert" send "$device has transmitted only $count data points for the last ${HOURS}h. Expected minimum is $EXPECTED" || $(true)
 done
